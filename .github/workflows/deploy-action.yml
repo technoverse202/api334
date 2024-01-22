@@ -1,0 +1,36 @@
+name: Deploy API
+
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  build_job:
+    runs-on: self-hosted
+    env:
+      GIT_DEPTH: 10
+      GIT_CLEAN_FLAGS: none
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: ${{ env.GIT_DEPTH }}
+          
+      - name: Prepare API Configuration
+        run: |
+          echo -n '{"draft_api": ' > apic_temp.json
+          cat openapi/openapi.originalname >> apic_temp.json
+          echo '}' >> apic_temp.json
+
+      - name: Deploy API
+        run: |
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.APIC_TOKEN }}" \
+            -d @apic_temp.json ${{ secrets.APIC_SERVER }}
+
+    env:
+      apic_token: ${{ secrets.APIC_TOKEN }}
+      apic_server: ${{ secrets.APIC_SERVER }}
